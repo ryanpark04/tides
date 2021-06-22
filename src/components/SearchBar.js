@@ -1,4 +1,4 @@
-import React, { useReducer, useRef, useEffect } from 'react';
+import React, { useReducer, useRef, useEffect, useCallback } from 'react';
 import { Search } from 'semantic-ui-react';
 import _ from 'lodash';
 import stations from '../utils/stations.json';
@@ -32,9 +32,10 @@ const SearchBar = (props) => {
     const [state, dispatch] = useReducer(reducer, initialState);
     const { loading, results, value, location } = state;
 
+    const propsRef = useRef(props);
     const timeoutRef = useRef();
 
-    const handleSearchChange = (e, data) => {
+    const handleSearchChange = useCallback((e, data) => {
         clearTimeout(timeoutRef.current);
         dispatch({ type: 'START_SEARCH', query: data.value});
 
@@ -67,8 +68,8 @@ const SearchBar = (props) => {
                 results: sliced
             });
 
-        }, 300);
-    }
+        }, 300)
+    }, []);
 
     const onTermSubmit = (event) => {
         event.preventDefault();
@@ -88,8 +89,9 @@ const SearchBar = (props) => {
         if (location === null) {
             return;
         }
-        props.fetchData(location);
-    }, [location, props]);
+        propsRef.current.fetchData(location)
+    }, [location, propsRef]);
+
 
     return  (
         <form onSubmit={onTermSubmit}>
