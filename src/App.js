@@ -5,44 +5,67 @@ import SearchBar from './components/SearchBar';
 
 const App = () => {
     const [location, setLocation] = useState(null);
-    const [tideData, setTideData] = useState(null);
+    const [tideData, setTideData] = useState([]);
+    const [today, setToday] = useState([]);
 
     const fetchData = async (location) => {
         setLocation(location);
-        const today = new Date();
-        const threeDaysLater = new Date(today);
-        threeDaysLater.setDate(today.getDate() + 3);
 
-        const beginDateString = today.getFullYear().toString() 
-                                + ((today.getMonth() + 1).toString().length > 1 ? (today.getMonth() + 1).toString() : '0' + (today.getMonth() + 1).toString()) 
-                                + (today.getDate().toString().length > 1 ? today.getDate().toString() : '0' + today.getDate().toString());
+        const getDateArray = (date) => {
+            const yyyy = date.getFullYear().toString();
+            const mm = (date.getMonth() + 1).toString();
+            const dd = date.getDate().toString();
 
-        const endDateString = threeDaysLater.getFullYear().toString() 
-                              + ((threeDaysLater.getMonth() + 1).toString().length > 1 ? (threeDaysLater.getMonth() + 1).toString() : '0' + (threeDaysLater.getMonth() + 1).toString())
-                              + (threeDaysLater.getDate().toString().length > 1 ? threeDaysLater.getDate().toString() : '0' + threeDaysLater.getDate().toString());
+            return [
+                yyyy,
+                (mm.length > 1 ? mm : '0' + mm),
+                (dd.length > 1 ? dd : '0' + dd)
+            ];
+        }
 
-        const { data } = await axios.get('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter', {
+        const d = new Date();
+
+        const d30 = new Date(d);
+        d30.setDate(d.getDate() + 30);
+
+        const beginDateString = getDateArray(d).join('');
+        const endDateString = getDateArray(d30).join('');
+
+        const { data: { predictions } } = await axios.get('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter', {
             params: {
-                product: 'predictions',
                 begin_date: beginDateString,
                 end_date: endDateString,
+                product: 'predictions',
                 datum: 'MLLW',
                 station: location.id,
-                time_zone: 'lst_ldt',
                 units: 'english',
+                time_zone: 'lst_ldt',
                 interval: 'hilo',
-                format: 'JSON'
+                format: 'JSON',
+                application: 'web_services'
             },
         });
-        setTideData(data);
+        const currentTide = predictions.filter((tide) => {
+            return tide.t.includes(getDateArray(d).join('-'));
+        });
+
+        setTideData(predictions);
+        setToday(currentTide);
     }
 
-    const renderTideInfo = (data) => {
-        if (data === null) {
+
+
+
+    const renderTideInfo = (data, today) => {
+        if (data.length === 0 && today.length === 0) {
             return;
         }
         return (
             <Segment>
+                <Header>Today's Tides</Header>
+                <pre style={{ overflowX: 'auto' }}>
+                    {JSON.stringify(today, null, 4)}
+                </pre>
                 <Header>Tide Information</Header>
                 <pre style={{ overflowX: 'auto' }}>
                     {JSON.stringify(data, null, 4)}
@@ -55,7 +78,7 @@ const App = () => {
         <Grid>
             <Grid.Column width={6}>
                 <SearchBar fetchData={fetchData} />
-                {renderTideInfo(tideData)}
+                {renderTideInfo(tideData, today)}
             </Grid.Column>      
         </Grid>
     );
