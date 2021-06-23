@@ -53,9 +53,6 @@ const App = () => {
         setToday(currentTide);
     }
 
-
-
-
     const renderTideInfo = (data, today) => {
         if (data.length === 0 && today.length === 0) {
             return;
