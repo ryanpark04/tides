@@ -1,7 +1,25 @@
 import React, { useState } from 'react';
-import { Grid, Header, Segment } from 'semantic-ui-react';
+import { Grid, Header, Segment, Container } from 'semantic-ui-react';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 import axios from 'axios';
 import SearchBar from './components/SearchBar';
+import CurrentTide from './components/CurrentTide';
+
+const options = {
+    chart: {
+        type: 'spline',
+        zoomType: 'x'
+    },
+    title: {
+        text: 'Test'
+    },
+    series: [
+        {
+            data: [-1.006, 4.057, 2.142, 6.784, -1.577, 4.210, 2.363, 6.967 , -1.892, 4.313, 2.520, 6.964, -1.951, 4.385, 2.637, 6.763]
+        }
+    ]
+}
 
 const App = () => {
     const [location, setLocation] = useState(null);
@@ -53,31 +71,51 @@ const App = () => {
         setToday(currentTide);
     }
 
-    const renderTideInfo = (data, today) => {
+    const renderCurrentTide = (data, today) => {
+        if (data.length === 0 && today.length === 0) {
+            return;
+        }
+        return (
+            <CurrentTide data={today} />
+        );
+    }
+
+    const renderChart = (data, today) => {
         if (data.length === 0 && today.length === 0) {
             return;
         }
         return (
             <Segment>
-                <Header>Today's Tides</Header>
-                <pre style={{ overflowX: 'auto' }}>
-                    {JSON.stringify(today, null, 4)}
-                </pre>
-                <Header>Tide Information</Header>
-                <pre style={{ overflowX: 'auto' }}>
-                    {JSON.stringify(data, null, 4)}
-                </pre>
+                <HighchartsReact highcharts={Highcharts} options={options} />
             </Segment>
         );
     }
 
     return (
-        <Grid>
-            <Grid.Column width={6}>
-                <SearchBar fetchData={fetchData} />
-                {renderTideInfo(tideData, today)}
-            </Grid.Column>      
-        </Grid>
+        <Container>
+            <Grid>
+                <Grid.Row/>
+                <Grid.Row>
+                    <Grid.Column>
+                        <SearchBar fetchData={fetchData} />
+                    </Grid.Column>
+                </Grid.Row>
+                <Grid.Row>
+                    <Grid.Column width={11}>        
+                        {renderChart(tideData, today)}
+                    </Grid.Column>
+                    <Grid.Column width={5}>        
+                        {renderCurrentTide(tideData, today)}
+                    </Grid.Column> 
+                </Grid.Row>
+                <Grid.Row>
+                    <Grid.Column width={16}>        
+                        {renderChart(tideData, today)}
+                    </Grid.Column>
+                </Grid.Row>   
+            </Grid>
+        </Container>
+        
     );
 }
 
