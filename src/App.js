@@ -1,34 +1,28 @@
 import React, { useState } from 'react';
-import { Grid, Header, Segment, Container } from 'semantic-ui-react';
-import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import {
+    Grid,
+    Segment,
+    Container,
+    Header,
+    Loader,
+    Dimmer
+} from 'semantic-ui-react';
 import axios from 'axios';
 import SearchBar from './components/SearchBar';
 import CurrentTide from './components/CurrentTide';
-
-const options = {
-    chart: {
-        type: 'spline',
-        zoomType: 'x'
-    },
-    title: {
-        text: 'Test'
-    },
-    series: [
-        {
-            data: [-1.006, 4.057, 2.142, 6.784, -1.577, 4.210, 2.363, 6.967 , -1.892, 4.313, 2.520, 6.964, -1.951, 4.385, 2.637, 6.763]
-        }
-    ]
-}
+import Map from './components/Map';
+import Chart from './components/Chart';
+import Start from './components/Start';
 
 const App = () => {
-    const [location, setLocation] = useState(null);
-    const [tideData, setTideData] = useState([]);
-    const [today, setToday] = useState([]);
+    const [state, setState] = useState({
+        loading: false,
+        location: null,
+        tideData: [],
+        today: []
+    });
 
     const fetchData = async (location) => {
-        setLocation(location);
-
         const getDateArray = (date) => {
             const yyyy = date.getFullYear().toString();
             const mm = (date.getMonth() + 1).toString();
@@ -43,11 +37,13 @@ const App = () => {
 
         const d = new Date();
 
-        const d30 = new Date(d);
-        d30.setDate(d.getDate() + 30);
+        const d7 = new Date(d);
+        d7.setDate(d.getDate() + 7);
 
         const beginDateString = getDateArray(d).join('');
-        const endDateString = getDateArray(d30).join('');
+        const endDateString = getDateArray(d7).join('');
+
+        setState({ loading: true })
 
         const { data: { predictions } } = await axios.get('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter', {
             params: {
@@ -67,55 +63,62 @@ const App = () => {
             return tide.t.includes(getDateArray(d).join('-'));
         });
 
-        setTideData(predictions);
-        setToday(currentTide);
+        setState({ tideData: predictions, today: currentTide, location: location, loading: false });
     }
 
-    const renderCurrentTide = (data, today) => {
-        if (data.length === 0 && today.length === 0) {
-            return;
-        }
-        return (
-            <CurrentTide data={today} />
-        );
-    }
+    const renderComponents = (state) => {
+        if (state.loading) {
+            return (
+                <Dimmer active inverted>
+                    <Loader />
+                </Dimmer>
+            );
 
-    const renderChart = (data, today) => {
-        if (data.length === 0 && today.length === 0) {
-            return;
+        } else if (state.tideData.length === 0) {
+            return (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+                    <div style={{ width: "800px" }} >
+                        <Start fetchData={fetchData} />
+                    </div>
+                </div>
+            );
+
         }
+        
         return (
-            <Segment>
-                <HighchartsReact highcharts={Highcharts} options={options} />
-            </Segment>
+            <Container>
+                <Grid>
+                    <Grid.Row />
+                    <Grid.Row>
+                        <Grid.Column>
+                            <SearchBar fetchData={fetchData} />
+                        </Grid.Column>
+                    </Grid.Row>
+                    <Header as='h1'>{state.location.name + (state.location.state.length === 0 ? '' : (', ' + state.location.state))}</Header>
+                    <Grid.Row>
+                        <Grid.Column width={11}>
+                            <Map location={state.location} />
+                        </Grid.Column>
+                        <Grid.Column width={5}>
+                            <CurrentTide data={state.today} />
+                        </Grid.Column>
+                    </Grid.Row>
+                    <Grid.Row>
+                        <Grid.Column width={16}>
+                            <Segment>
+                                <Chart data={state.tideData} />
+                            </Segment>
+                        </Grid.Column>
+                    </Grid.Row>
+                </Grid>
+            </Container>
         );
     }
 
     return (
-        <Container>
-            <Grid>
-                <Grid.Row/>
-                <Grid.Row>
-                    <Grid.Column>
-                        <SearchBar fetchData={fetchData} />
-                    </Grid.Column>
-                </Grid.Row>
-                <Grid.Row>
-                    <Grid.Column width={11}>        
-                        {renderChart(tideData, today)}
-                    </Grid.Column>
-                    <Grid.Column width={5}>        
-                        {renderCurrentTide(tideData, today)}
-                    </Grid.Column> 
-                </Grid.Row>
-                <Grid.Row>
-                    <Grid.Column width={16}>        
-                        {renderChart(tideData, today)}
-                    </Grid.Column>
-                </Grid.Row>   
-            </Grid>
-        </Container>
-        
+        <div>
+            {renderComponents(state)}
+        </div>
     );
 }
 

@@ -14,7 +14,7 @@ const initialState = {
 }
 
 function reducer(state, action) {
-    switch(action.type) {
+    switch (action.type) {
         case 'CLEAN_QUERY':
             return initialState;
         case 'START_SEARCH':
@@ -22,7 +22,7 @@ function reducer(state, action) {
         case 'FINISH_SEARCH':
             return { ...state, loading: false, results: action.results };
         case 'UPDATE_SELECTION':
-            return { ...state, location: action.data, results: [], value: action.selection };
+            return { ...state, location: action.data, results: [], value: '' };
         default:
             throw new Error();
     }
@@ -37,7 +37,7 @@ const SearchBar = (props) => {
 
     const handleSearchChange = useCallback((e, data) => {
         clearTimeout(timeoutRef.current);
-        dispatch({ type: 'START_SEARCH', query: data.value});
+        dispatch({ type: 'START_SEARCH', query: data.value });
 
         timeoutRef.current = setTimeout(() => {
             if (data.value.length === 0) {
@@ -51,7 +51,7 @@ const SearchBar = (props) => {
             const filtered = _.filter(locations, isMatch);
             const endIndex = Math.min(filtered.length, 5);
 
-            function renameKey( obj, oldKey, newKey ) {
+            function renameKey(obj, oldKey, newKey) {
                 obj[newKey] = obj[oldKey];
                 delete obj[oldKey];
             }
@@ -62,7 +62,7 @@ const SearchBar = (props) => {
                 obj.description = states[obj.state];
                 renameKey(obj, 'tideType', 'tidetype');
             });
-            
+
             dispatch({
                 type: 'FINISH_SEARCH',
                 results: sliced
@@ -93,14 +93,14 @@ const SearchBar = (props) => {
     }, [location, propsRef]);
 
 
-    return  (
+    return (
         <form onSubmit={onTermSubmit}>
-            <Search 
+            <Search
                 loading={loading}
-                onResultSelect = {(e, data) => 
+                onResultSelect={(e, data) =>
                     dispatch({ type: 'UPDATE_SELECTION', selection: data.result.title, data: data.result })
                 }
-                onSearchChange={handleSearchChange} 
+                onSearchChange={handleSearchChange}
                 results={results}
                 value={value}
                 placeholder={"Search Locations..."}

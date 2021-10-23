@@ -3,13 +3,12 @@ import { Grid, Segment, Header } from 'semantic-ui-react';
 
 const CurrentTide = ({ data }) => {
 
-
     const renderedList = data.map((tide) => {
         return (
-            <Segment >
+            <Segment key={tide.t}>
                 <Grid textAlign={'center'}>
                     <Grid.Column width={5}>
-                        {tide.type == 'L' ? 'Low' : 'High'}
+                        {tide.type === 'L' ? 'Low' : 'High'}
                     </Grid.Column>
                     <Grid.Column width={6}>
                         {tide.t}
